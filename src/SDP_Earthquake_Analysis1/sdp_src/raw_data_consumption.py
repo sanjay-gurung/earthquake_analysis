@@ -56,32 +56,32 @@ source_schema = StructType([
     StructField('type', StringType(), True)
 ])
 
-@dp.table(
-    name = "lakehouse.`02_bronze`.sdp_earthquake_source_data",
-    comment= """
-    "Earthquake data from USGS
-    - raw data is streamed via autoloader in frm the raw volume
-    """
 
+@dp.table(
+    name = "lakehouse.`02_bronze`.sdp_earthquate_source_data",
+    comment = """
+    "Earthquake data from USGC"
+    - Raw data is streamed via autoloader in the raw volume"
+    """
 )
-def sdp_earthquake_source_data():
+
+def sdp_earthquate_source_data():
     bronze_source = (
         spark.readStream.format("cloudfiles")
         .option("cloudFiles.format", "json")
         .schema(source_schema)
         .load(raw_data_path)
-    )
-    # return df
-    bronze_source_exploded = bronze_source.select(F.explode('features').alias('features'))
+    ) 
+    bronze_source_exploded = bronze_source.select(F.explode("features").alias('features'))
 
-    bronze_source_exploded_1  = bronze_source_exploded.select(
+    bronze_source_exploded_1 = bronze_source_exploded.select(
         "features.properties.*",
         "features.id",
         F.col("features.geometry.coordinates")[0].alias("longitude"),
         F.col("features.geometry.coordinates")[1].alias("latitude"),
         F.col("features.geometry.coordinates")[2].alias("depth")
     )
-
+    
     source_transform = (
         bronze_source_exploded_1.withColumn("time", F.from_unixtime(F.col("time") / 1000).cast("timestamp"))
         .withColumn("updated", F.from_unixtime(F.col("updated") / 1000).cast("timestamp"))
@@ -91,3 +91,9 @@ def sdp_earthquake_source_data():
         .withColumn("felt", F.col("felt").cast("double"))
     )
     return source_transform
+
+
+
+
+
+
